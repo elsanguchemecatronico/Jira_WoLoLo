@@ -1,11 +1,9 @@
-# INSTALLATION
-# pip install flet --upgrade
-# pip install python-dotenv
-
-from datetime import datetime,timedelta,timezone
 import flet as ft
 from jira import JIRA
+import jira
+import sys
 from dotenv import dotenv_values
+from datetime import datetime,timedelta,timezone
 import re
 #import pytz
 
@@ -130,6 +128,8 @@ def main(page: ft.Page):
 		dates = parse_days(txt_dates.value)
 
 		tz = datetime.now(timezone.utc).astimezone().tzinfo
+		# FIXME
+		# What happens if I use 2023.11.11,-2023.11.11?
 		for d in dates:
 			d = d.astimezone(tz)
 			d = d.replace(hour = 9,minute = 0,second = 0)
@@ -152,14 +152,14 @@ def main(page: ft.Page):
 
 	txt_issue = ft.TextField(
 		label = 'Issue',
-		hint_text = 'FAMPVW-92',
+		hint_text = 'COMMONACT-3',
 		expand = True,
 		on_change = process_inputs
 		)
 
 	txt_time = ft.TextField(
 		label = 'Time Spent',
-		hint_text = '1d 2h 3m',
+		hint_text = '1w 2d 3h 4m',
 		expand = False,
 		width = 150,
 		on_change = process_inputs
@@ -172,7 +172,8 @@ def main(page: ft.Page):
 
 	txt_dates = ft.TextField(
 		label = 'Dates',
-		hint_text = '2023.11.12',
+		hint_text = '2023.11.01:2023.11.03,2023.11.20,-2023.11.02',
+#		helper_text = 'The suggested text generates a log for November 1, 3 and 20, 2023.',
 		on_change = process_inputs
 		)
 
@@ -260,8 +261,14 @@ def main(page: ft.Page):
 
 	jira_options = {'server':server}
 	credentials = (email,token)
-	client = JIRA(options = jira_options,basic_auth = credentials)
-#	me = client.current_user()
+	try:
+		client = JIRA(options = jira_options,basic_auth = credentials)
+		me = client.current_user()
+	except jira.JIRAError as e:
+		print('ERROR: ',e.text)
+		page.window_destroy()
+		sys.exit(1)
+
 	jql = 'worklogAuthor = currentUser()'
 	all_issues = client.search_issues(jql_str = jql,maxResults = 0)
 	all_issues = [i.key for i in all_issues]

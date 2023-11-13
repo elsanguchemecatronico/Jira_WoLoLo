@@ -1,0 +1,5 @@
+flet
+jira
+python-dotenv
+datetime
+regex
