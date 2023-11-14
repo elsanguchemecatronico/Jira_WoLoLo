@@ -10,7 +10,8 @@ import re
 ###############################################################################
 
 # FIXME
-# What happens if in an interval, start > end.
+# Q: What happens if in an interval, start > end.
+# A: Nothing, it returns an empty array.
 def parse_days(s):
 	days = []
 
@@ -128,8 +129,7 @@ def main(page: ft.Page):
 		dates = parse_days(txt_dates.value)
 
 		tz = datetime.now(timezone.utc).astimezone().tzinfo
-		# FIXME
-		# What happens if I use 2023.11.11,-2023.11.11?
+		# If dates is empty, no work log will be uploaded.
 		for d in dates:
 			d = d.astimezone(tz)
 			d = d.replace(hour = 9,minute = 0,second = 0)
@@ -235,6 +235,7 @@ def main(page: ft.Page):
 #	page.scroll = ft.ScrollMode.ADAPTIVE
 	page.window_width = 400
 	page.window_height = 300
+	page.window_maximizable = False
 	page.horizontal_alignment = ft.CrossAxisAlignment.CENTER
 	page.vertical_alignment = ft.MainAxisAlignment.CENTER
 
