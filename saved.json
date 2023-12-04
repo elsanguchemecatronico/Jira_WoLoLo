@@ -1,0 +1,26 @@
+{
+    "Vacaciones": {
+        "issue": "COMMONACT-3",
+        "time": "1d",
+        "comment": "Vacations",
+        "dates": "2023.11.01:2023.11.30",
+        "weekend": false,
+        "color": "#55FF0000"
+    },
+    "Feriado": {
+        "issue": "COMMONACT-1",
+        "time": "1d",
+        "comment": "Navidad",
+        "dates": "2023.12.25",
+        "weekend": false,
+        "color": "#5500FF00"
+    },
+    "Licencia": {
+        "issue": "COMMONACT-6",
+        "time": "3h",
+        "comment": "M\u00e9dico",
+        "dates": "2023.11.30",
+        "weekend": false,
+        "color": "#550000FF"
+    }
+}

@@ -1,11 +1,12 @@
 import flet as ft
-from jira import JIRA
-import jira
-import sys
-from dotenv import dotenv_values
+#import sys
 from datetime import datetime,timedelta,timezone
 import re
+import json
+#from time import sleep
 #import pytz
+#import fsm
+from jira_client import jira_client
 
 ###############################################################################
 
@@ -62,6 +63,7 @@ OK = 'ok'
 
 ###############################################################################
 
+
 def main(page: ft.Page):
 
 	valid = {
@@ -70,12 +72,114 @@ def main(page: ft.Page):
 		'dates':False
 		}
 
+	##################################################
+
+	def page_init():
+		# Page properties.
+		page.title = 'Jira WoLoLo'
+		page.window_resizable = True
+		page.window_width = 650
+		page.window_height = 370
+		page.window_maximizable = False
+		page.horizontal_alignment = ft.CrossAxisAlignment.CENTER
+		page.vertical_alignment = ft.MainAxisAlignment.START
+		page.update()
+
 	##############################
 
-	def process_issue(issue):
-		valid['issue'] = True if issue in all_issues else False
+	def display_loading(show,value = None):
+		if show:
+			stk_loading.controls.append(cnt_loading)
+			rng_loading.value = value
+			cnt_left.disabled = True
+		else:
+			stk_loading.controls.pop()
+			rng_loading.value = None
+			cnt_left.disabled = False
+		page.update()
 
-	def process_time(time):
+	##############################
+
+	def get_jira_issues():
+		client = jira_client()
+		client.update_issues()
+		client_issues = client.get_issues()
+		for i in client_issues:
+			ddw_issue.options.append(ft.dropdown.Option(i))
+		return client
+
+	##############################
+
+	def upload_callback(e):
+		issue = ddw_issue.value
+		time = txf_time.value
+		comment = txf_comment.value
+		dates = parse_days(txf_dates.value)
+
+		tz = datetime.now(timezone.utc).astimezone().tzinfo
+		# If dates is empty, no work log will be uploaded.
+
+		n = len(dates)
+		i = 0
+		display_loading(True,0)
+		for d in dates:
+			d = d.astimezone(tz)
+			d = d.replace(hour = 9,minute = 0,second = 0)
+			client.upload_worklog(issue,time,comment,d)
+
+			i += 1/n
+			display_loading(True,i)
+			#sleep(0.25)
+
+		display_loading(False)
+
+		txf_time.value = ''
+
+		# FIXME
+		# Find out how to call the txt_time callback manually.
+		# txt_time.on_change()
+		btn_upload.disabled = True
+
+		page.update()
+
+	##############################
+
+	def save_callback(e):
+		page.dialog = dlg_confirm
+		dlg_confirm.open = True
+		page.update()
+
+	##############################
+
+	def delete_callback(e):
+		name = e.control.label.value
+		dlg_delete.content.value = f'Do you really want to delete <{name}> chip?'
+		page.dialog = dlg_delete
+		dlg_delete.open = True
+		page.update()
+
+	def close_dlg(e):
+		pass
+
+	##############################
+
+	def issue_callback(e):
+		issue_validation()
+
+	def issue_validation():
+		issue = ddw_issue.value
+		if issue != None:
+			answer = True if issue in client.get_issues() else False
+			valid['issue'] = answer
+		manage_errors()
+
+	##############################
+
+	def time_callback(e):
+		time_validation()
+
+	def time_validation():
+		time = txf_time.value
 		p1 = r'^(\d+w)( \d+d)?( \d+h)?( \d+m)?$'
 		p2 = r'^(\d+d)( \d+h)?( \d+m)?$'
 		p3 = r'^(\d+h)( \d+m)?$'
@@ -83,13 +187,478 @@ def main(page: ft.Page):
 		pattern = f'{p1}|{p2}|{p3}|{p4}'
 		match = re.search(pattern,time)
 		valid['time'] = True if match else False
+		manage_errors()
 
-	def process_dates(dates):
+	##############################
+
+	def dates_callback(e):
+		dates_validation()
+
+	def dates_validation():
+		dates = txf_dates.value
 		try:
 			parse_days(dates)
 			valid['dates'] = True
+			#txf_dates.error_text = ''
+			txf_dates.label = 'Dates'
 		except ValueError:
 			valid['dates'] = False
+			#txf_dates.error_text = 'Error'
+			txf_dates.label = 'Dates - ERROR'
+		manage_errors()
+
+	##############################
+
+	def manage_errors():
+		state = all(valid.values())
+		if state:
+			btn_upload.disabled = False
+			btn_save.disabled = False
+		else:
+			btn_upload.disabled = True
+			btn_save.disabled = True
+		page.update()
+
+	##############################
+
+	def name_callback(e):
+		name = txf_save_name.value
+		if name not in saved.keys() and name != '':
+			btn_confirm_save.disabled = False
+		else:
+			btn_confirm_save.disabled = True
+		page.update()
+
+	def confirm_callback(e):
+		name = txf_save_name.value
+		saved[name] = {
+			'issue':ddw_issue.value,
+			'time':txf_time.value,
+			'comment':txf_comment.value,
+			'dates':txf_dates.value,
+			'weekend':False,
+			'color':'#55FF0000'
+			}
+
+		with open('saved.json','w') as f:
+			json.dump(saved,f,indent = 4)
+
+		chp_saved = create_chips(saved)
+
+		lst_saved.controls = list(chp_saved.values())
+
+		dlg_confirm.open = False
+		page.update()
+
+	def confirm_delete_callback(e):
+		# FIXME
+		# This is a really bad way to pass information between functions.
+		# The data is enbeded in the control string value.
+		name = re.search('Do you really want to delete <(.*)> chip?',dlg_delete.content.value)
+		name = name.group(1)
+		saved.pop(name)
+
+		with open('saved.json','w') as f:
+			json.dump(saved,f,indent = 4)
+
+		chp_saved = create_chips(saved)
+
+		lst_saved.controls = list(chp_saved.values())
+
+		dlg_delete.open = False
+		page.update()
+
+	def cancel_save_callback(e):
+		dlg_confirm.open = False
+		page.update()
+
+	def cancel_delete_callback(e):
+		dlg_delete.open = False
+		page.update()
+
+	def options_callback(e):
+		value = rdo_dates.value
+		now = datetime.now()
+		#datetime.strptime(interval[0],'%Y.%m.%d')
+
+		if value == 'custom':
+			txf_dates.disabled = False
+		elif value == 'today':
+			now = datetime.strftime(now,'%Y.%m.%d')
+			txf_dates.value = now
+			txf_dates.disabled = True
+		elif value == 'yesterday':
+			yesterday = now - timedelta(1)
+			yesterday = datetime.strftime(yesterday,'%Y.%m.%d')
+			txf_dates.value = yesterday
+			txf_dates.disabled = True
+
+		page.update()
+
+	##################################################
+
+	# ddw = Dropdown.
+	# txf = TextField.
+	# btn = ElevatedButton.
+	# rom = Row.
+	# col = Column.
+	# cnt = Container
+	# rng = ProgressRing
+
+	txf_save_name = ft.TextField(
+		label = 'Chip name',
+		on_change = name_callback,
+		expand = True
+		)
+
+	btn_confirm_save = ft.OutlinedButton(
+		text = "Save",
+		on_click = confirm_callback,
+		disabled = True
+	)
+
+	dlg_confirm = ft.AlertDialog(
+		modal = True,
+		title = ft.Text("Save Chip"),
+		content = ft.Column(
+			controls = [
+				ft.Text('Please enter new chip name.'),
+				txf_save_name
+				],
+			expand = False
+			),
+		actions = [
+			btn_confirm_save,
+			ft.OutlinedButton(
+				text = "Cancel",
+				on_click = cancel_save_callback
+				)
+			],
+		actions_alignment = ft.MainAxisAlignment.END,
+		#on_dismiss = lambda e: print("Modal dialog dismissed!"),
+		)
+
+	dlg_delete = ft.AlertDialog(
+		modal = True,
+		title = ft.Text('Please confirm'),
+		content = ft.Text('Text will be completed later.'),
+		actions = [
+			ft.OutlinedButton(
+				text = "Yes",
+				on_click = confirm_delete_callback
+				),
+			ft.OutlinedButton(
+				text = "No",
+				on_click = cancel_delete_callback
+				)
+			],
+		actions_alignment=ft.MainAxisAlignment.END,
+		)
+
+	##################################################
+
+	ddw_issue = ft.Dropdown(
+		label = 'Issue',
+		hint_text = 'COMMONACT-3',
+		on_change = issue_callback,
+		expand = True
+		)
+
+	txf_time = ft.TextField(
+		label = 'Time Spent',
+		hint_text = '1w 2d 3h 4m',
+		on_change = time_callback,
+		expand = False,
+		width = 150
+		)
+
+	txf_comment = ft.TextField(
+		label = 'Comment',
+		hint_text = 'Wololo Rules!'
+		)
+
+	txf_dates = ft.TextField(
+		label = 'Dates',
+		hint_text = '2023.11.01:2023.11.03,2023.11.20,-2023.11.02',
+		on_change = dates_callback
+		)
+
+	rdo_dates = ft.RadioGroup(
+		content = ft.Row([
+			ft.Radio(value = "custom", label = "Custom"),
+			ft.Radio(value = "today", label = "Today"),
+			ft.Radio(value = "yesterday", label = "Yesterday")
+			],
+			alignment = ft.MainAxisAlignment.CENTER
+			),
+		on_change = options_callback
+		)
+	rdo_dates.value = 'custom'
+
+	btn_upload = ft.ElevatedButton(
+		text = 'Upload Work Log',
+		icon = 'upload',
+		on_click = upload_callback,
+		disabled = True,
+		expand = True
+		)
+
+	btn_save = ft.ElevatedButton(
+		text = 'Save Work Log',
+		icon = 'save',
+		on_click = save_callback,
+		disabled = True,
+		expand = True
+		)
+
+	##############################
+
+	row_issues = ft.Row(
+		controls = [ddw_issue,txf_time]
+		)
+
+	col_left = ft.Column(
+		controls = [
+			row_issues,
+			txf_comment,
+			txf_dates,
+			rdo_dates],
+		expand = True
+		)
+
+	rng_loading = ft.ProgressRing()
+
+	cnt_loading = ft.Container(
+		content = rng_loading,
+		alignment = ft.alignment.center,
+		height = 200,
+		#width = 400
+		)
+
+	stk_loading = ft.Stack(
+		controls = [col_left])
+
+	##############################
+
+	def chips_callback(e):
+		for c in lst_saved.controls:
+			if c != e.control:
+				c.selected = False
+
+		if e.control.selected:
+			ddw_issue.disabled = True
+			rdo_dates.value = 'custom'
+			txf_dates.disabled = False
+
+			ddw_issue.value = saved[e.control.label.value]['issue']
+			txf_time.value = saved[e.control.label.value]['time']
+			txf_comment.value = saved[e.control.label.value]['comment']
+			txf_dates.value = saved[e.control.label.value]['dates']
+
+			issue_validation()
+			time_validation()
+			dates_validation()
+		else:
+			ddw_issue.disabled = False
+
+		page.update()
+
+	with open('saved.json','r') as f:
+		saved = json.load(f)
+		#json.dump(saved,f,indent = 4)
+		#print(saved)
+
+	def create_chips(saved):
+		chips = {}
+		for name in saved.keys():
+			color = saved[name]['color']
+			chips[name] = ft.Chip(
+				label = ft.Text(name),
+		#		leading = ft.Icon(ft.icons.MAP_SHARP),
+				show_checkmark = True,
+				on_select = chips_callback,
+				on_delete = delete_callback,
+				bgcolor = color
+				)
+		return chips
+
+	chp_saved = create_chips(saved)
+
+	lst_saved = ft.ListView(
+		controls = list(chp_saved.values()),
+		#controls = [ft.Text('hola'),ft.Text('hola'),ft.Text('hola'),ft.Text('hola'),ft.Text('hola'),ft.Text('hola'),ft.Text('hola'),ft.Text('hola'),ft.Text('hola'),ft.Text('hola'),ft.Text('hola'),ft.Text('hola'),ft.Text('hola'),ft.Text('hola'),ft.Text('hola'),ft.Text('hola'),ft.Text('hola'),ft.Text('hola'),ft.Text('hola'),ft.Text('hola'),ft.Text('hola'),ft.Text('hola'),ft.Text('hola'),ft.Text('hola'),ft.Text('hola'),ft.Text('hola'),ft.Text('hola'),ft.Text('hola'),ft.Text('hola'),ft.Text('hola'),ft.Text('hola'),ft.Text('hola'),ft.Text('hola'),ft.Text('hola'),ft.Text('hola'),ft.Text('hola'),ft.Text('hola')],
+		spacing = 3,
+		#auto_scroll = True,
+		#tight = True,
+		#scroll = ft.ScrollMode.ALWAYS,
+		height = 200
+		)
+
+	##############################
+
+	row_buttons = ft.Row(
+		controls = [
+			ft.Column(
+				controls = [btn_upload],
+				expand = False),
+			ft.Column(
+				controls = [btn_save],
+				expand = False)
+		],
+		alignment = ft.MainAxisAlignment.CENTER,
+		expand = True
+		)
+
+	cnt_left = ft.Container(
+		content = stk_loading,
+#		border_radius = 10,
+#		border = ft.border.all(2),
+		width = 400
+		#expand =
+		)
+
+	cnt_right = ft.Container(
+		content = lst_saved,
+		expand = True,
+#		width = 200
+		)
+
+	row_main = ft.Row(
+		controls = [
+			cnt_left,
+			# FIXME
+			# For some reason, this vertical divider does not show up.
+			ft.VerticalDivider(thickness = 10,color = ft.colors.BLACK),
+			cnt_right
+			],
+		expand = False
+		)
+
+	col_main = ft.Column(
+		controls = [
+			row_main,
+			ft.Divider(thickness = 1,color = ft.colors.BLACK),
+			row_buttons
+			],
+		expand = True
+		)
+
+	cnt_main = ft.Container(
+		content = col_main,
+		expand = True
+		)
+	page.add(cnt_main)
+
+	##################################################
+
+# =============================================================================
+# 	def page_resize(e):
+# 		print('Page size:', page.window_width, page.window_height)
+# 		print('Row size:', row_buttons.width, page.height)
+#
+# 	page.on_resize = page_resize
+# =============================================================================
+
+	page_init()
+	display_loading(True)
+	client = get_jira_issues()
+	display_loading(False)
+
+########################################################################
+
+# Web app.
+#ft.app(target = main,view = ft.WEB_BROWSER)
+# Desktop app.
+ft.app(target = main)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+"""
+
+
+
+
+
+
+
+	##################################################
+
+
+
+
+
+
+
+	##############################
 
 	def process_inputs(e):
 		if e.control == txt_issue:
@@ -103,6 +672,8 @@ def main(page: ft.Page):
 			process_dates(dates)
 		manage_errors()
 
+	##############################
+
 	def change_page_theme(state):
 		if state == OK:
 			page.theme = None
@@ -112,176 +683,14 @@ def main(page: ft.Page):
 				visual_density = ft.ThemeVisualDensity.COMPACT
 				)
 
-	def manage_errors():
-		state = all(valid.values())
-		if state:
-#			change_page_theme(OK)
-			btn_upload.disabled = False
-		else:
-#			change_page_theme(ERROR)
-			btn_upload.disabled = True
-		page.update()
 
-	def upload_work_log(e):
-		issue = txt_issue.value
-		time = txt_time.value
-		comment = txt_comment.value
-		dates = parse_days(txt_dates.value)
-
-		tz = datetime.now(timezone.utc).astimezone().tzinfo
-		# If dates is empty, no work log will be uploaded.
-		for d in dates:
-			d = d.astimezone(tz)
-			d = d.replace(hour = 9,minute = 0,second = 0)
-			answer = client.add_worklog(
-				issue = issue,
-				timeSpent = time,
-				comment = comment,
-				started = d)
-
-		txt_time.value = ''
-
-		# FIXME
-		# Find out how to call the txt_time callback manually.
-#		txt_time.on_change()
-		btn_upload.disabled = True
-
-		page.update()
 
 	##############################
 
-	txt_issue = ft.TextField(
-		label = 'Issue',
-		hint_text = 'COMMONACT-3',
-		expand = True,
-		on_change = process_inputs
-		)
 
-	txt_time = ft.TextField(
-		label = 'Time Spent',
-		hint_text = '1w 2d 3h 4m',
-		expand = False,
-		width = 150,
-		on_change = process_inputs
-		)
 
-	txt_comment = ft.TextField(
-		label = 'Comment',
-		hint_text = 'Wololo Rules!'
-		)
 
-	txt_dates = ft.TextField(
-		label = 'Dates',
-		hint_text = '2023.11.01:2023.11.03,2023.11.20,-2023.11.02',
-#		helper_text = 'The suggested text generates a log for November 1, 3 and 20, 2023.',
-		on_change = process_inputs
-		)
 
-	btn_upload = ft.ElevatedButton(
-		text = 'Upload Work Log',
-		icon = 'upload',
-		on_click = upload_work_log
-		)
 
-	btn_saved = ft.ElevatedButton(
-		text = 'Save Work Log',
-		icon = 'save',
-		on_click = upload_work_log,
-		disabled = True
-		)
 
-	row_buttons = ft.Row(
-		controls = [btn_upload],
-		alignment = ft.MainAxisAlignment.CENTER
-		)
-
-	row = ft.Row(
-		controls = [txt_issue,txt_time]
-		)
-
-	col = ft.Column(
-		controls = [row,txt_comment,txt_dates,row_buttons],
-		expand = True
-		)
-
-	ring = ft.ProgressRing()
-	ring_container = ft.Container(
-		content = ring,
-		alignment = ft.alignment.center,
-		height = 200,
-		#width = 400
-		)
-
-	st = ft.Stack(
-		controls = [col])
-
-	cnt = ft.Container(
-		content = st,
-#		border_radius = 10,
-#		border = ft.border.all(2),
-		expand = False
-		)
-
-	page.add(cnt)
-
-	##############################
-
-	# Page properties.
-	page.title = 'Jira WoLoLo'
-#	page.bgcolor = '#FFFF0000'
-#	page.vertical_alignment = ft.MainAxisAlignment.CENTER
-#	page.horizontal_alignment = ft.CrossAxisAlignment.STRETCH
-	page.window_resizable = False
-#	page.scroll = ft.ScrollMode.ADAPTIVE
-	page.window_width = 400
-	page.window_height = 300
-	page.window_maximizable = False
-	page.horizontal_alignment = ft.CrossAxisAlignment.CENTER
-	page.vertical_alignment = ft.MainAxisAlignment.CENTER
-
-# =============================================================================
-# 	def page_resize(e):
-# 		print('New page size:', page.window_width, page.window_height)
-#
-# 	page.on_resize = page_resize
-# =============================================================================
-
-	page.update()
-
-	##############################
-
-	page.splash = None
-	st.controls.append(ring_container)
-	cnt.disabled = True
-	page.update()
-
-	config = dotenv_values('.env')
-	server = config['SERVER']
-	email = config['EMAIL']
-	token = config['TOKEN']
-
-	jira_options = {'server':server}
-	credentials = (email,token)
-	try:
-		client = JIRA(options = jira_options,basic_auth = credentials)
-		me = client.current_user()
-	except jira.JIRAError as e:
-		print('ERROR: ',e.text)
-		page.window_destroy()
-		sys.exit(1)
-
-	jql = 'worklogAuthor = currentUser()'
-	all_issues = client.search_issues(jql_str = jql,maxResults = 0)
-	all_issues = [i.key for i in all_issues]
-
-	st.controls.pop()
-	cnt.disabled = False
-	manage_errors()
-	page.update()
-
-########################################################################
-
-# Web app.
-#ft.app(target = main,view = ft.WEB_BROWSER)
-# Desktop app.
-ft.app(target = main)
+"""
