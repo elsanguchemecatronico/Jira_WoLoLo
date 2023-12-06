@@ -60,6 +60,7 @@ def parse_days(s):
 
 ERROR = 'error'
 OK = 'ok'
+TITLE = 'Jira WoLoLo v1.2.1'
 
 ###############################################################################
 
@@ -76,8 +77,8 @@ def main(page: ft.Page):
 
 	def page_init():
 		# Page properties.
-		page.title = 'Jira WoLoLo'
-		page.window_resizable = True
+		page.title = TITLE
+		page.window_resizable = False
 		page.window_width = 650
 		page.window_height = 370
 		page.window_maximizable = False
@@ -89,13 +90,16 @@ def main(page: ft.Page):
 
 	def display_loading(show,value = None):
 		if show:
-			stk_loading.controls.append(cnt_loading)
+			#page.dialog = dlg_loading
+			#bst_loading.open = True
+			cnt_loading.visible = True
 			rng_loading.value = value
-			cnt_left.disabled = True
+			col_main.disabled = True
 		else:
-			stk_loading.controls.pop()
+			#bst_loading.open = False
+			cnt_loading.visible = False
 			rng_loading.value = None
-			cnt_left.disabled = False
+			col_main.disabled = False
 		page.update()
 
 	##############################
@@ -431,12 +435,24 @@ def main(page: ft.Page):
 	cnt_loading = ft.Container(
 		content = rng_loading,
 		alignment = ft.alignment.center,
-		height = 200,
+		padding = 10
+		#height = 200,
 		#width = 400
 		)
 
-	stk_loading = ft.Stack(
-		controls = [col_left])
+# =============================================================================
+# 	def dismiss(e):
+# 		pass
+#
+# 	bst_loading = ft.Container(
+# 		#modal = True,
+# 		#inset_padding = ft.padding.symmetric(vertical=12, horizontal=12),
+# 		content = cnt_loading,
+# 		on_dismiss = dismiss
+# 		)
+# =============================================================================
+
+	page.overlay.append(cnt_loading)
 
 	##############################
 
@@ -510,7 +526,7 @@ def main(page: ft.Page):
 		)
 
 	cnt_left = ft.Container(
-		content = stk_loading,
+		content = col_left,
 #		border_radius = 10,
 #		border = ft.border.all(2),
 		width = 400
@@ -563,134 +579,13 @@ def main(page: ft.Page):
 	display_loading(True)
 	client = get_jira_issues()
 	display_loading(False)
+	page.title = f'{TITLE} - {client.me}'
+	page.update()
 
 ########################################################################
 
 # Web app.
 #ft.app(target = main,view = ft.WEB_BROWSER)
+
 # Desktop app.
 ft.app(target = main)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-"""
-
-
-
-
-
-
-
-	##################################################
-
-
-
-
-
-
-
-	##############################
-
-	def process_inputs(e):
-		if e.control == txt_issue:
-			issue = txt_issue.value
-			process_issue(issue)
-		elif e.control == txt_time:
-			time = txt_time.value
-			process_time(time)
-		elif e.control == txt_dates:
-			dates = txt_dates.value
-			process_dates(dates)
-		manage_errors()
-
-	##############################
-
-	def change_page_theme(state):
-		if state == OK:
-			page.theme = None
-		elif state == ERROR:
-			page.theme = ft.Theme(
-				color_scheme_seed = 'red',
-				visual_density = ft.ThemeVisualDensity.COMPACT
-				)
-
-
-
-	##############################
-
-
-
-
-
-
-
-"""

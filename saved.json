@@ -7,10 +7,10 @@
         "weekend": false,
         "color": "#55FF0000"
     },
-    "Feriado": {
+    "Navidad": {
         "issue": "COMMONACT-1",
         "time": "1d",
-        "comment": "Navidad",
+        "comment": "Christmas",
         "dates": "2023.12.25",
         "weekend": false,
         "color": "#5500FF00"
@@ -22,5 +22,13 @@
         "dates": "2023.11.30",
         "weekend": false,
         "color": "#550000FF"
+    },
+    "8 de dic": {
+	        "issue": "COMMONACT-1",
+	        "time": "1d",
+	        "comment": "Inmaculada Concepción de María",
+	        "dates": "2023.12.08",
+	        "weekend": false,
+	        "color": "#5500FF00"
     }
 }
