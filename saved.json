@@ -24,11 +24,11 @@
         "color": "#550000FF"
     },
     "8 de dic": {
-	        "issue": "COMMONACT-1",
-	        "time": "1d",
-	        "comment": "Inmaculada Concepción de María",
-	        "dates": "2023.12.08",
-	        "weekend": false,
-	        "color": "#5500FF00"
+        "issue": "COMMONACT-1",
+        "time": "1d",
+        "comment": "Inmaculada Concepcion de Maria",
+        "dates": "2023.12.08",
+        "weekend": false,
+        "color": "#5500FF00"
     }
 }

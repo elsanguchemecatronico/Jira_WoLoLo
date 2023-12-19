@@ -2,59 +2,12 @@ import flet as ft
 #import sys
 from datetime import datetime,timedelta,timezone
 import re
-import json
 #from time import sleep
 #import pytz
 #import fsm
 from jira_client import jira_client
-
-###############################################################################
-
-# FIXME
-# Q: What happens if in an interval, start > end.
-# A: Nothing, it returns an empty array.
-def parse_days(s):
-	days = []
-
-	if s != '':
-		s = s.replace('/','.')
-		parts = s.split(',')
-
-		for p in parts:
-			if '-' not in p:
-				if ':' in p:
-					interval = p.split(':')
-					start = datetime.strptime(interval[0],'%Y.%m.%d')
-					end = datetime.strptime(interval[1],'%Y.%m.%d')
-
-					n = (end - start).days + 1
-
-					x = [start + timedelta(days = i) for i in range(n)]
-
-					days.extend(x)
-				else:
-					day = datetime.strptime(p,'%Y.%m.%d')
-					days.extend([day])
-
-		for p in parts:
-			if '-' in p:
-				if ':' in p:
-					interval = p.split(':')
-					start = datetime.strptime(interval[0],'-%Y.%m.%d')
-					end = datetime.strptime(interval[1],'%Y.%m.%d')
-
-					n = (end - start).days + 1
-
-					x = [start + timedelta(days = i) for i in range(n)]
-					days = [d for d in days if d not in x]
-				else:
-					day = datetime.strptime(p,'-%Y.%m.%d')
-					days = [d for d in days if d != day]
-
-		# Removes Saturdays and Sundays.
-		days = [d for d in days if d.weekday() not in [5,6]]
-
-	return days
+from saved import saved_issues
+from dates_parser import parse_dates
 
 ###############################################################################
 
@@ -73,6 +26,8 @@ def main(page: ft.Page):
 		'dates':False
 		}
 
+	saved = saved_issues('saved.json')
+
 	##################################################
 
 	def page_init():
@@ -90,13 +45,10 @@ def main(page: ft.Page):
 
 	def display_loading(show,value = None):
 		if show:
-			#page.dialog = dlg_loading
-			#bst_loading.open = True
 			cnt_loading.visible = True
 			rng_loading.value = value
 			col_main.disabled = True
 		else:
-			#bst_loading.open = False
 			cnt_loading.visible = False
 			rng_loading.value = None
 			col_main.disabled = False
@@ -118,7 +70,7 @@ def main(page: ft.Page):
 		issue = ddw_issue.value
 		time = txf_time.value
 		comment = txf_comment.value
-		dates = parse_days(txf_dates.value)
+		dates = parse_dates(txf_dates.value)
 
 		tz = datetime.now(timezone.utc).astimezone().tzinfo
 		# If dates is empty, no work log will be uploaded.
@@ -143,6 +95,7 @@ def main(page: ft.Page):
 		# Find out how to call the txt_time callback manually.
 		# txt_time.on_change()
 		btn_upload.disabled = True
+		btn_save.disabled = True
 
 		page.update()
 
@@ -151,6 +104,32 @@ def main(page: ft.Page):
 	def save_callback(e):
 		page.dialog = dlg_confirm
 		dlg_confirm.open = True
+		page.update()
+
+	def confirm_save_callback(e):
+		name = txf_save_name.value
+		saved.data[name] = {
+			'issue':ddw_issue.value,
+			'time':txf_time.value,
+			'comment':txf_comment.value,
+			'dates':txf_dates.value,
+			'weekend':False,
+			'color':'#55FF0000'
+			}
+
+#		with open('saved.json','w') as f:
+#			json.dump(saved,f,indent = 4)
+		saved.save()
+
+		chp_saved = create_chips(saved.data)
+
+		lst_saved.controls = list(chp_saved.values())
+
+		dlg_confirm.open = False
+		page.update()
+
+	def cancel_save_callback(e):
+		dlg_confirm.open = False
 		page.update()
 
 	##############################
@@ -162,8 +141,28 @@ def main(page: ft.Page):
 		dlg_delete.open = True
 		page.update()
 
-	def close_dlg(e):
-		pass
+	def confirm_delete_callback(e):
+		# FIXME
+		# This is a really bad way to pass information between functions.
+		# The data is enbeded in the control string value.
+		name = re.search('Do you really want to delete <(.*)> chip?',dlg_delete.content.value)
+		name = name.group(1)
+		saved.data.pop(name)
+
+#		with open('saved.json','w') as f:
+#			json.dump(saved,f,indent = 4)
+		saved.save()
+
+		chp_saved = create_chips(saved.data)
+
+		lst_saved.controls = list(chp_saved.values())
+
+		dlg_delete.open = False
+		page.update()
+
+	def cancel_delete_callback(e):
+		dlg_delete.open = False
+		page.update()
 
 	##############################
 
@@ -201,17 +200,36 @@ def main(page: ft.Page):
 	def dates_validation():
 		dates = txf_dates.value
 		try:
-			parse_days(dates)
+			parse_dates(dates)
 			valid['dates'] = True
-			#txf_dates.error_text = ''
 			txf_dates.label = 'Dates'
 		except ValueError:
 			valid['dates'] = False
-			#txf_dates.error_text = 'Error'
 			txf_dates.label = 'Dates - ERROR'
 		manage_errors()
 
 	##############################
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 	def manage_errors():
 		state = all(valid.values())
@@ -227,57 +245,10 @@ def main(page: ft.Page):
 
 	def name_callback(e):
 		name = txf_save_name.value
-		if name not in saved.keys() and name != '':
+		if name not in saved.data.keys() and name != '':
 			btn_confirm_save.disabled = False
 		else:
 			btn_confirm_save.disabled = True
-		page.update()
-
-	def confirm_callback(e):
-		name = txf_save_name.value
-		saved[name] = {
-			'issue':ddw_issue.value,
-			'time':txf_time.value,
-			'comment':txf_comment.value,
-			'dates':txf_dates.value,
-			'weekend':False,
-			'color':'#55FF0000'
-			}
-
-		with open('saved.json','w') as f:
-			json.dump(saved,f,indent = 4)
-
-		chp_saved = create_chips(saved)
-
-		lst_saved.controls = list(chp_saved.values())
-
-		dlg_confirm.open = False
-		page.update()
-
-	def confirm_delete_callback(e):
-		# FIXME
-		# This is a really bad way to pass information between functions.
-		# The data is enbeded in the control string value.
-		name = re.search('Do you really want to delete <(.*)> chip?',dlg_delete.content.value)
-		name = name.group(1)
-		saved.pop(name)
-
-		with open('saved.json','w') as f:
-			json.dump(saved,f,indent = 4)
-
-		chp_saved = create_chips(saved)
-
-		lst_saved.controls = list(chp_saved.values())
-
-		dlg_delete.open = False
-		page.update()
-
-	def cancel_save_callback(e):
-		dlg_confirm.open = False
-		page.update()
-
-	def cancel_delete_callback(e):
-		dlg_delete.open = False
 		page.update()
 
 	def options_callback(e):
@@ -317,7 +288,7 @@ def main(page: ft.Page):
 
 	btn_confirm_save = ft.OutlinedButton(
 		text = "Save",
-		on_click = confirm_callback,
+		on_click = confirm_save_callback,
 		disabled = True
 	)
 
@@ -440,18 +411,6 @@ def main(page: ft.Page):
 		#width = 400
 		)
 
-# =============================================================================
-# 	def dismiss(e):
-# 		pass
-#
-# 	bst_loading = ft.Container(
-# 		#modal = True,
-# 		#inset_padding = ft.padding.symmetric(vertical=12, horizontal=12),
-# 		content = cnt_loading,
-# 		on_dismiss = dismiss
-# 		)
-# =============================================================================
-
 	page.overlay.append(cnt_loading)
 
 	##############################
@@ -466,10 +425,10 @@ def main(page: ft.Page):
 			rdo_dates.value = 'custom'
 			txf_dates.disabled = False
 
-			ddw_issue.value = saved[e.control.label.value]['issue']
-			txf_time.value = saved[e.control.label.value]['time']
-			txf_comment.value = saved[e.control.label.value]['comment']
-			txf_dates.value = saved[e.control.label.value]['dates']
+			ddw_issue.value = saved.data[e.control.label.value]['issue']
+			txf_time.value = saved.data[e.control.label.value]['time']
+			txf_comment.value = saved.data[e.control.label.value]['comment']
+			txf_dates.value = saved.data[e.control.label.value]['dates']
 
 			issue_validation()
 			time_validation()
@@ -479,8 +438,8 @@ def main(page: ft.Page):
 
 		page.update()
 
-	with open('saved.json','r') as f:
-		saved = json.load(f)
+#	with open('saved.json','r') as f:
+#		saved = json.load(f)
 		#json.dump(saved,f,indent = 4)
 		#print(saved)
 
@@ -498,7 +457,7 @@ def main(page: ft.Page):
 				)
 		return chips
 
-	chp_saved = create_chips(saved)
+	chp_saved = create_chips(saved.data)
 
 	lst_saved = ft.ListView(
 		controls = list(chp_saved.values()),
@@ -527,16 +486,12 @@ def main(page: ft.Page):
 
 	cnt_left = ft.Container(
 		content = col_left,
-#		border_radius = 10,
-#		border = ft.border.all(2),
 		width = 400
-		#expand =
 		)
 
 	cnt_right = ft.Container(
 		content = lst_saved,
-		expand = True,
-#		width = 200
+		expand = True
 		)
 
 	row_main = ft.Row(
@@ -544,7 +499,7 @@ def main(page: ft.Page):
 			cnt_left,
 			# FIXME
 			# For some reason, this vertical divider does not show up.
-			ft.VerticalDivider(thickness = 10,color = ft.colors.BLACK),
+			ft.VerticalDivider(thickness = 1,color = ft.colors.BLACK),
 			cnt_right
 			],
 		expand = False
@@ -563,6 +518,7 @@ def main(page: ft.Page):
 		content = col_main,
 		expand = True
 		)
+
 	page.add(cnt_main)
 
 	##################################################

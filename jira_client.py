@@ -6,11 +6,7 @@ Created on Fri Nov 24 14:04:50 2023
 
 
 
-Bad domain
-ERROR:  Site temporarily unavailable
 
-Bad user or token.
-ERROR:  Client must be authenticated to access this resource.
 
 """
 
@@ -19,6 +15,20 @@ import jira
 from dotenv import dotenv_values
 
 class jira_client():
+	"""
+	At initialization tries to read the .env file, which must contain 3 lines:
+		SERVER = 'Your domain'
+		EMAIL = 'Your Jira account email'
+		TOKEN = 'Your Jira token'
+
+	Will raise an exception in case of wrong data in the .env file:
+	Bad domain
+	ERROR:  Site temporarily unavailable
+
+	Bad user or token.
+	ERROR:  Client must be authenticated to access this resource.
+	"""
+
 	def __init__(self):
 		self.client = None
 		self.me = ''
@@ -37,7 +47,7 @@ class jira_client():
 			# This line catches an error in the server variable.
 			self.client = JIRA(options = jira_options,basic_auth = credentials)
 
-			# While these 2 catch errors in the credencials variables.
+			# While these catch errors in the credencials variables.
 			me = self.client.current_user()
 			self.me = self.client.user(me)
 
@@ -45,22 +55,53 @@ class jira_client():
 			print('ERROR: ',e.text)
 			raise Exception('Sorry. Server or user credentials are incorrect.')
 
-
 	def update_issues(self):
+		"""
+		Searchs for the issues the user already has worklogs and saves the keys (i.e. names).
+
+		Returns
+		-------
+		None.
+
+		"""
 		jql = 'worklogAuthor = currentUser()'
 		issues = self.client.search_issues(jql_str = jql,maxResults = 0)
 		self.issues = [i.key for i in issues]
 
 	def get_issues(self):
+		"""
+		Returns the list of issues keys.
+
+		Returns
+		-------
+		TYPE
+			DESCRIPTION.
+
+		"""
 		return self.issues
 
 	def upload_worklog(self,issue,time,comment = '',date = ''):
+		"""
+
+
+		Parameters
+		----------
+		issue : str
+			DESCRIPTION.
+		time : str
+			DESCRIPTION.
+		comment : str, optional
+			DESCRIPTION. The default is ''.
+		date : str, optional
+			DESCRIPTION. The default is ''.
+
+		Returns
+		-------
+		None.
+
+		"""
 		self.client.add_worklog(
 			issue = issue,
 			timeSpent = time,
 			comment = comment,
 			started = date)
-
-#yo = jira_client()
-#yo.update_issues()
-#print(yo.get_issues())
