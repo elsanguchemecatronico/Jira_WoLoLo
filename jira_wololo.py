@@ -183,10 +183,11 @@ def main(page: ft.Page):
 
 	def time_validation():
 		time = txf_time.value
-		p1 = r'^(\d+w)( \d+d)?( \d+h)?( \d+m)?$'
-		p2 = r'^(\d+d)( \d+h)?( \d+m)?$'
-		p3 = r'^(\d+h)( \d+m)?$'
-		p4 = r'^(\d+m)$'
+		s = '\d*([.]\d+)?'
+		p1 = fr'^({s}w)( {s}d)?( {s}h)?( {s}m)?$'
+		p2 = fr'^({s}d)( {s}h)?( {s}m)?$'
+		p3 = fr'^({s}h)( {s}m)?$'
+		p4 = fr'^({s}m)$'
 		pattern = f'{p1}|{p2}|{p3}|{p4}'
 		match = re.search(pattern,time)
 		valid['time'] = True if match else False

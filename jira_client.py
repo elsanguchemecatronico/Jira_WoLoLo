@@ -22,12 +22,11 @@ class jira_client():
 		TOKEN = 'Your Jira token'
 
 	Will raise an exception in case of wrong data in the .env file:
-	Bad domain
-	ERROR:  Site temporarily unavailable
-
-	Bad user or token.
-	ERROR:  Client must be authenticated to access this resource.
+	Bad domain -> ERROR: Site temporarily unavailable
+	Bad user or token -> ERROR: Client must be authenticated to access this resource.
 	"""
+
+	####################################################################
 
 	def __init__(self):
 		self.client = None
@@ -55,9 +54,11 @@ class jira_client():
 			print('ERROR: ',e.text)
 			raise Exception('Sorry. Server or user credentials are incorrect.')
 
+	####################################################################
+
 	def update_issues(self):
 		"""
-		Searchs for the issues the user already has worklogs and saves the keys (i.e. names).
+		Searchs for the issues the user already has worklogs and saves the keys (i.e. the names).
 
 		Returns
 		-------
@@ -68,21 +69,25 @@ class jira_client():
 		issues = self.client.search_issues(jql_str = jql,maxResults = 0)
 		self.issues = [i.key for i in issues]
 
+	####################################################################
+
 	def get_issues(self):
 		"""
-		Returns the list of issues keys.
+		Returns the list of issue keys.
 
 		Returns
 		-------
-		TYPE
+		List
 			DESCRIPTION.
 
 		"""
 		return self.issues
 
+	####################################################################
+
 	def upload_worklog(self,issue,time,comment = '',date = ''):
 		"""
-
+		Uploads a work log to Jira.
 
 		Parameters
 		----------
