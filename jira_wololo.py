@@ -2,12 +2,14 @@ import flet as ft
 #import sys
 from datetime import datetime,timedelta,timezone
 import re
+# https://regex101.com/
 #from time import sleep
 #import pytz
 #import fsm
 from jira_client import jira_client
 from saved import saved_issues
 from dates_parser import parse_dates
+import calendar
 
 ###############################################################################
 
@@ -261,12 +263,38 @@ def main(page: ft.Page):
 			txf_dates.disabled = False
 		elif value == 'today':
 			now = datetime.strftime(now,'%Y.%m.%d')
+
 			txf_dates.value = now
 			txf_dates.disabled = True
 		elif value == 'yesterday':
 			yesterday = now - timedelta(1)
 			yesterday = datetime.strftime(yesterday,'%Y.%m.%d')
+
 			txf_dates.value = yesterday
+			txf_dates.disabled = True
+		elif value == 'thisweek':
+			# Get the current year, week number and day of week (monday = 1).
+			year,week,dow = now.isocalendar() # DOW = day of week
+
+			start = datetime.strptime(f'{year}-{week}-1',"%Y-%W-%w").date()
+			end = datetime.strptime(f'{year}-{week}-5',"%Y-%W-%w").date()
+			start = datetime.strftime(start,'%Y.%m.%d')
+			end = datetime.strftime(end,'%Y.%m.%d')
+
+			txf_dates.value = f'{start}:{end}'
+			txf_dates.disabled = True
+		elif value == 'thismonth':
+			# Get the current year and month.
+			year = now.year
+			month = now.month
+			num_days = calendar.monthrange(year,month)
+
+			start = datetime.strptime(f'{year}-{month}-1',"%Y-%m-%d").date()
+			end = datetime.strptime(f'{year}-{month}-{num_days[1]}',"%Y-%m-%d").date()
+			start = datetime.strftime(start,'%Y.%m.%d')
+			end = datetime.strftime(end,'%Y.%m.%d')
+
+			txf_dates.value = f'{start}:{end}'
 			txf_dates.disabled = True
 
 		page.update()
@@ -363,13 +391,25 @@ def main(page: ft.Page):
 		content = ft.Row([
 			ft.Radio(value = "custom", label = "Custom"),
 			ft.Radio(value = "today", label = "Today"),
-			ft.Radio(value = "yesterday", label = "Yesterday")
+			ft.Radio(value = "yesterday", label = "Yesterday"),
+			ft.Radio(value = "thisweek", label = "This Week"),
+			ft.Radio(value = "thismonth", label = "This Month")
 			],
+			scroll = ft.ScrollMode.HIDDEN,
+			expand = True,
 			alignment = ft.MainAxisAlignment.CENTER
 			),
 		on_change = options_callback
 		)
 	rdo_dates.value = 'custom'
+
+# =============================================================================
+# 	lst = ft.ListView(
+# 		controls = [rdo_dates],
+# 		horizontal = True,
+# 		expand = True
+# 		)
+# =============================================================================
 
 	btn_upload = ft.ElevatedButton(
 		text = 'Upload Work Log',
