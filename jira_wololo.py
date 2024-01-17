@@ -273,8 +273,19 @@ def main(page: ft.Page):
 			txf_dates.value = yesterday
 			txf_dates.disabled = True
 		elif value == 'thisweek':
-			# Get the current year, week number and day of week (monday = 1).
+			# Get the current year and week number. Day of week (monday = 1) is not used.
 			year,week,dow = now.isocalendar() # DOW = day of week
+
+			start = datetime.strptime(f'{year}-{week}-1',"%Y-%W-%w").date()
+			end = datetime.strptime(f'{year}-{week}-5',"%Y-%W-%w").date()
+			start = datetime.strftime(start,'%Y.%m.%d')
+			end = datetime.strftime(end,'%Y.%m.%d')
+
+			txf_dates.value = f'{start}:{end}'
+			txf_dates.disabled = True
+		elif value == 'lastweek':
+			# Get the year and week number of 7 days ago. Day of week (monday = 1) is not used.
+			year,week,dow = (now - timedelta(days = 7)).isocalendar() # DOW = day of week
 
 			start = datetime.strptime(f'{year}-{week}-1',"%Y-%W-%w").date()
 			end = datetime.strptime(f'{year}-{week}-5',"%Y-%W-%w").date()
@@ -287,6 +298,21 @@ def main(page: ft.Page):
 			# Get the current year and month.
 			year = now.year
 			month = now.month
+			num_days = calendar.monthrange(year,month)
+
+			start = datetime.strptime(f'{year}-{month}-1',"%Y-%m-%d").date()
+			end = datetime.strptime(f'{year}-{month}-{num_days[1]}',"%Y-%m-%d").date()
+			start = datetime.strftime(start,'%Y.%m.%d')
+			end = datetime.strftime(end,'%Y.%m.%d')
+
+			txf_dates.value = f'{start}:{end}'
+			txf_dates.disabled = True
+		elif value == 'lastmonth':
+			# Get the current year and month.
+			last_month = now.replace(day = 1)
+			last_month = last_month - timedelta(days = 1)
+			year = last_month.year
+			month = last_month.month
 			num_days = calendar.monthrange(year,month)
 
 			start = datetime.strptime(f'{year}-{month}-1',"%Y-%m-%d").date()
@@ -393,11 +419,14 @@ def main(page: ft.Page):
 			ft.Radio(value = "today", label = "Today"),
 			ft.Radio(value = "yesterday", label = "Yesterday"),
 			ft.Radio(value = "thisweek", label = "This Week"),
-			ft.Radio(value = "thismonth", label = "This Month")
+			ft.Radio(value = "lastweek", label = "Last Week"),
+			ft.Radio(value = "thismonth", label = "This Month"),
+			ft.Radio(value = "lastmonth", label = "Last Month")
 			],
 			scroll = ft.ScrollMode.HIDDEN,
 			expand = True,
-			alignment = ft.MainAxisAlignment.CENTER
+			alignment = ft.MainAxisAlignment.CENTER,
+			vertical_alignment = ft.CrossAxisAlignment.CENTER
 			),
 		on_change = options_callback
 		)
