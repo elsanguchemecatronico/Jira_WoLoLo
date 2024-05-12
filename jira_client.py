@@ -8,6 +8,20 @@ Created on Fri Nov 24 14:04:50 2023
 
 
 
+https://jira.readthedocs.io/examples.html#issues
+
+https://developer.atlassian.com/cloud/jira/platform/rest/v3/api-group-issue-worklogs/#api-group-issue-worklogs
+
+
+
+Acá dejé una consulta por los 5000 worklogs que se trae la funcion- worklogs().
+https://community.atlassian.com/t5/Jira-Software-questions/Return-more-than-5000-worklogs-for-a-given-issue/qaq-p/2215910#U2590805
+
+
+Creé un nuevo ticket
+https://community.atlassian.com/t5/Jira-questions/Return-more-than-5000-worklogs-for-a-given-issue-using-hte/qaq-p/2695166#M1016759
+
+
 """
 
 from jira import JIRA

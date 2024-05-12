@@ -3,4 +3,3 @@ jira
 python-dotenv
 datetime
 regex
-json

@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 import flet as ft
 #import sys
 from datetime import datetime,timedelta,timezone
@@ -10,17 +12,14 @@ from jira_client import jira_client
 from saved import saved_issues
 from dates_parser import parse_dates
 import calendar
+import time
 
 ###############################################################################
-
-ERROR = 'error'
-OK = 'ok'
-TITLE = 'Jira WoLoLo v1.2.1'
-
-###############################################################################
-
 
 def main(page: ft.Page):
+	ERROR = 'error'
+	OK = 'ok'
+	TITLE = 'Jira WoLoLo v1.2.2'
 
 	valid = {
 		'issue':False,
@@ -34,13 +33,20 @@ def main(page: ft.Page):
 
 	def page_init():
 		# Page properties.
-		page.title = TITLE
+
+		# This is done here because there is a bug in flet.
+		# https://github.com/electron/electron/issues/31233
+		# The window gets resized when the resizing is disabled.
+		# So the resizing is disabled and then the window is resized.
 		page.window_resizable = False
+		page.update()
+
+		page.window_resizable = True
 		page.window_width = 650
 		page.window_height = 370
-		page.window_maximizable = False
 		page.horizontal_alignment = ft.CrossAxisAlignment.CENTER
 		page.vertical_alignment = ft.MainAxisAlignment.START
+		page.title = TITLE
 		page.update()
 
 	##############################
