@@ -27,9 +27,14 @@ TOKEN = ''
 ## Creating an API Token for Atlassian Account
 
 1. Go to Confluence and log in if you are not.
-1. Go to Confluence and log in if you are not.
-1. Click on Manage Account.
-1. You will be redirected to your profile configuration page. Click on the Security tab.
+2. Click on your account avatar on the top right corner.
+3. Click on Manage Account.
+4. You will be redirected to your profile configuration page. Click on the Security tab.
+5. Scroll down until API tokens. Click on Create and manage API tokens.
+6. Click on Create API token.
+7. Give your new token a name.
+8. Copy your new token.
+9. You are done. :sunglasses:
 
 ## Running the App
 
