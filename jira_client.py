@@ -40,7 +40,7 @@ class jira_client():
 	Bad user or token -> ERROR: Client must be authenticated to access this resource.
 	"""
 
-	####################################################################
+	################################################################
 
 	def __init__(self):
 		self.client = None
@@ -68,7 +68,7 @@ class jira_client():
 			print('ERROR: ',e.text)
 			raise Exception('Sorry. Server or user credentials are incorrect.')
 
-	####################################################################
+	################################################################
 
 	def update_issues(self):
 		"""
@@ -83,7 +83,7 @@ class jira_client():
 		issues = self.client.search_issues(jql_str = jql,maxResults = 0)
 		self.issues = [i.key for i in issues]
 
-	####################################################################
+	################################################################
 
 	def get_issues(self):
 		"""
@@ -97,7 +97,7 @@ class jira_client():
 		"""
 		return self.issues
 
-	####################################################################
+	################################################################
 
 	def upload_worklog(self,issue,time,comment = '',date = ''):
 		"""
@@ -124,3 +124,5 @@ class jira_client():
 			timeSpent = time,
 			comment = comment,
 			started = date)
+
+	################################################################

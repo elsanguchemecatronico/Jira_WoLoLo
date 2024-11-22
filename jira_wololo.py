@@ -209,11 +209,14 @@ def main(page: ft.Page):
 
 	def dates_validation():
 		dates = txf_dates.value
+
+		# These lines inplace the year, month and day placeholders.
+		# Replace {year}, {month} and {day} with current year, month and day.
 		current_date = datetime.now()
 		dates = dates.replace('{year}',str(current_date.year))
 		dates = dates.replace('{month}',str(current_date.month))
 		dates = dates.replace('{day}',str(current_date.day))
-		print(dates)
+
 		try:
 			parse_dates(dates)
 			valid['dates'] = True

@@ -4,9 +4,6 @@ The Jira Work Log Logger (or WoLoLo, for those who recall playing AoE) is an app
 > [!NOTE]
 > For now, the app will only allow you to upload work logs in issues you already have work logs. This is a safety measure.
 
-
-
-
 ## Installing the Required Packages
 
 The Jira Wololo need some packages to work so make sure you have the required modules to run the app. It is supposed that you already have python and pip installed.
@@ -22,13 +19,13 @@ pip install --upgrade -r requirements.txt
 The first thing to do is to create a .env file in the same folder the jira_wololo.py script is located. This file is not provided since it contains sensitive information. Add the following code to it and complete the 2 last lines with your information.
 
 ```
-SERVER = 'https://mirgor-engineering.atlassian.net/'
+SERVER = ''
 EMAIL = ''
 TOKEN = ''
 ```
 
-
-
+> [!INFO]
+> For Mirgor employees, the domain is `https://mirgor-engineering.atlassian.net/`.
 
 ## Creating an API Token for Atlassian Account
 
