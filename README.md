@@ -27,13 +27,17 @@ TOKEN = ''
 ## Creating an API Token for Atlassian Account
 
 1. Go to Confluence and log in if you are not.
-2. Go to Confluence and log in if you are not.
+1. Go to Confluence and log in if you are not.
+1. Click on Manage Account.
+1. You will be redirected to your profile configuration page. Click on the Security tab.
 
 ## Running the App
 
 To execute the app, type:
 
-	python jira_wololo.py
+```
+python jira_wololo.py
+```
 
 The app will show up and start downloading the issues you already have worklogs in.
 
