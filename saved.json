@@ -11,7 +11,7 @@
         "issue": "COMMONACT-1",
         "time": "1d",
         "comment": "Christmas",
-        "dates": "2023.12.25",
+        "dates": "{year}.12.25",
         "weekend": false,
         "color": "#5500FF00"
     },

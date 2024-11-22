@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Created on Fri Dec 15 10:24:31 2023
+Modified on 2024-11-23
 
 @author: arovero
 """
@@ -17,6 +18,7 @@ def parse_dates(s):
 		s = s.replace('/','.')
 		parts = s.split(',')
 
+		# Process all "positive" dates.
 		for p in parts:
 			if '-' not in p:
 				if ':' in p:
@@ -33,6 +35,7 @@ def parse_dates(s):
 					day = datetime.strptime(p,'%Y.%m.%d')
 					days.extend([day])
 
+		# Process all "negative" dates.
 		for p in parts:
 			if '-' in p:
 				if ':' in p:

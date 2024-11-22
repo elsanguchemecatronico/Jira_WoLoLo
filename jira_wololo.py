@@ -12,6 +12,7 @@ from jira_client import jira_client
 from saved import saved_issues
 from dates_parser import parse_dates
 import calendar
+from datetime import datetime
 import time
 
 ###############################################################################
@@ -38,12 +39,12 @@ def main(page: ft.Page):
 		# https://github.com/electron/electron/issues/31233
 		# The window gets resized when the resizing is disabled.
 		# So the resizing is disabled and then the window is resized.
-		page.window_resizable = False
+		page.window.resizable = False
 		page.update()
 
-		page.window_resizable = True
-		page.window_width = 650
-		page.window_height = 370
+		page.window.resizable = True
+		page.window.width = 650
+		page.window.height = 370
 		page.horizontal_alignment = ft.CrossAxisAlignment.CENTER
 		page.vertical_alignment = ft.MainAxisAlignment.START
 		page.title = TITLE
@@ -191,7 +192,7 @@ def main(page: ft.Page):
 
 	def time_validation():
 		time = txf_time.value
-		s = '\d*([.]\d+)?'
+		s = r'\d*([.]\d+)?'
 		p1 = fr'^({s}w)( {s}d)?( {s}h)?( {s}m)?$'
 		p2 = fr'^({s}d)( {s}h)?( {s}m)?$'
 		p3 = fr'^({s}h)( {s}m)?$'
@@ -208,6 +209,11 @@ def main(page: ft.Page):
 
 	def dates_validation():
 		dates = txf_dates.value
+		current_date = datetime.now()
+		dates = dates.replace('{year}',str(current_date.year))
+		dates = dates.replace('{month}',str(current_date.month))
+		dates = dates.replace('{day}',str(current_date.day))
+		print(dates)
 		try:
 			parse_dates(dates)
 			valid['dates'] = True
