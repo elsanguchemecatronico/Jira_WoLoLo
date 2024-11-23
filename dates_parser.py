@@ -7,11 +7,60 @@ Modified on 2024-11-23
 """
 
 from datetime import datetime,timedelta
+import re
 
 # FIXME
 # Q: What happens if in an interval, start > end.
 # A: Nothing, it returns an empty array.
 def parse_dates(s):
+	def replace_year(match):
+		print('Replace year')
+		year = datetime.now().year
+		offset = 0
+		if match.group(1) != None:
+			offset = int(match.group(1) + match.group(2))
+
+		print('Group 1: ',match.group(1))
+		print('Group 2: ',match.group(2))
+		print('Offset: ',offset)
+
+		return str(year + int(offset))
+
+	def replace_month(match):
+		print('Replace month')
+		month = datetime.now().month
+		offset = 0
+		if match.group(1) != None:
+			offset = int(match.group(1) + match.group(2))
+
+		print('Group 1: ',match.group(1))
+		print('Group 2: ',match.group(2))
+		print('Offset: ',offset)
+
+		return str(month + int(offset))
+
+	def replace_day(match):
+		print('Replace day')
+		day = datetime.now().day
+		offset = 0
+		if match.group(1) != None:
+			offset = int(match.group(1) + match.group(2))
+
+		print('Group 1: ',match.group(1))
+		print('Group 2: ',match.group(2))
+		print('Offset: ',offset)
+
+		return str(day + int(offset))
+
+	pattern = r'{\s*year\s*(?:([\+,-])\s*(\d+))?}'
+	s = re.sub(pattern,replace_year,s)
+	pattern = r'{\s*month\s*(?:([\+,-])\s*(\d+))?}'
+	s = re.sub(pattern,replace_month,s)
+	pattern = r'{\s*day\s*(?:([\+,-])\s*(\d+))?}'
+	s = re.sub(pattern,replace_day,s)
+
+	print(s)
+
 	days = []
 
 	if s != '':
@@ -54,4 +103,6 @@ def parse_dates(s):
 		# Removes Saturdays and Sundays.
 		days = [d for d in days if d.weekday() not in [5,6]]
 
+	print(days)
+	print('==============================')
 	return days

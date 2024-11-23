@@ -69,6 +69,13 @@ All logs “creation” time is set to 9 o’clock.
 
 ## Date Placeholders
 
-The app will automatically replace the date placeholders with the current date value.
+Date placeholders are special strings that will be replaced with the current date value. There are 3 date placeholders:
 
-`{year}.12.25`
+- `{year}`: the current year.
+- `{month}`: the current month.
+- `{day}`: the current day.
+
+Placeholders can be used in the same way as normal dates and are useful to create recurring work logs that can be saved. Examples:
+
+- Christmas: `{year}.12.25`. Fixed month and day.
+-

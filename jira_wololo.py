@@ -146,7 +146,7 @@ def main(page: ft.Page):
 	def delete_callback(e):
 		name = e.control.label.value
 		dlg_delete.content.value = f'Do you really want to delete <{name}> chip?'
-		page.dialog = dlg_delete
+		page.overlay.append(dlg_delete)
 		dlg_delete.open = True
 		page.update()
 
@@ -209,13 +209,6 @@ def main(page: ft.Page):
 
 	def dates_validation():
 		dates = txf_dates.value
-
-		# These lines inplace the year, month and day placeholders.
-		# Replace {year}, {month} and {day} with current year, month and day.
-		current_date = datetime.now()
-		dates = dates.replace('{year}',str(current_date.year))
-		dates = dates.replace('{month}',str(current_date.month))
-		dates = dates.replace('{day}',str(current_date.day))
 
 		try:
 			parse_dates(dates)
@@ -338,6 +331,7 @@ def main(page: ft.Page):
 			txf_dates.value = f'{start}:{end}'
 			txf_dates.disabled = True
 
+		dates_validation()
 		page.update()
 
 	##################################################

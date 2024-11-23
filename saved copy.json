@@ -1,4 +1,12 @@
 {
+    "Vacaciones": {
+        "issue": "COMMONACT-3",
+        "time": "1d",
+        "comment": "Vacations",
+        "dates": "2023.11.01:2023.11.30",
+        "weekend": false,
+        "color": "#55FF0000"
+    },
     "Navidad": {
         "issue": "COMMONACT-1",
         "time": "1d",
