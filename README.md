@@ -78,4 +78,5 @@ Date placeholders are special strings that will be replaced with the current dat
 Placeholders can be used in the same way as normal dates and are useful to create recurring work logs that can be saved. Examples:
 
 - Christmas: `{year}.12.25`. Fixed month and day.
--
+- First day of the month: `{year}.{month}.1`.
+- Today: `{year}.{month}.{day}`.
