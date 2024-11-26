@@ -34,6 +34,21 @@ def parse_dates(s):
 
 	################################################################
 
+	def parse_placeholders(s):
+		print('Input: ',s)
+		pat = r'\{\s*((?:[ymd]|\d+)(?:\s*[+-]\s*(?:[ymd]|\d+))*)\s*\}'
+		s = re.sub(pat,replace_data,s)
+		fields = s.split('.')
+		delta = relativedelta(years = eval(fields[0]) - 1,
+							  months = eval(fields[1]) - 1,
+							  days = eval(fields[2]) - 1)
+		s = (datetime(1,1,1) + delta).strftime('%Y.%m.%d')
+
+		print('Output: ',s)
+		return s
+
+	################################################################
+
 	def separate_dates(s):
 		days = []
 
@@ -42,11 +57,14 @@ def parse_dates(s):
 
 			# Process all "positive" dates.
 			for p in parts:
-				if '-' not in p:
+				print('Processing: ',p)
+				if not p.strip().startswith('-'):
 					if ':' in p:
 						interval = p.split(':')
-						start = datetime.strptime(interval[0],'%Y.%m.%d')
-						end = datetime.strptime(interval[1],'%Y.%m.%d')
+						start = parse_placeholders(interval[0])
+						end = parse_placeholders(interval[1])
+						start = datetime.strptime(start,'%Y.%m.%d')
+						end = datetime.strptime(end,'%Y.%m.%d')
 
 						n = (end - start).days + 1
 
@@ -54,6 +72,9 @@ def parse_dates(s):
 
 						days.extend(x)
 					else:
+						print('Discrete date: ',p)
+						p = parse_placeholders(p)
+						print(f'Processed: ${p}$')
 						day = datetime.strptime(p,'%Y.%m.%d')
 						days.extend([day])
 
@@ -89,22 +110,15 @@ def parse_dates(s):
 	#p = r'\{(.*?(?:[+,-].+)*)\}'
 
 	#p = r'\{((?:[ymd]|\d+)(?:[+-](?:[ymd]|\d+))*)\}'
-	p = r'\{\s*((?:[ymd]|\d+)(?:\s*[+-]\s*(?:[ymd]|\d+))*)\s*\}'
-	s = re.sub(p,replace_data,s)
-	parts = s.split('.')
 
 
 	try:
-		delta = relativedelta(years = eval(parts[0]) - 1,
-							  months = eval(parts[1]) - 1,
-							  days = eval(parts[2]) - 1)
-		s = (datetime(1,1,1) + delta).strftime('%Y.%m.%d')
 		answer = separate_dates(s)
 	except SyntaxError:
-#		print('SyntaxError')
+		print('SyntaxError')
 		answer = None
 	except ValueError:
-#		print('ValueError')
+		print('ValueError')
 		answer = None
 
 	return answer
@@ -125,3 +139,4 @@ if __name__ == '__main__':
 
 	for s in benchmark:
 		print(s.ljust(32),parse_dates(s))
+		print('==============================')
