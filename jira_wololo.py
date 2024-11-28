@@ -20,7 +20,7 @@ import time
 def main(page: ft.Page):
 	ERROR = 'error'
 	OK = 'ok'
-	TITLE = 'Jira WoLoLo v1.2.2'
+	TITLE = 'Jira WoLoLo v1.3.1'
 
 	valid = {
 		'issue':False,
