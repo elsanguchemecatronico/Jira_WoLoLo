@@ -3,7 +3,7 @@
         "issue": "COMMONACT-1",
         "time": "1d",
         "comment": "Christmas",
-        "dates": "{year}.12.25",
+        "dates": "{y}.12.25",
         "weekend": false,
         "color": "#5500FF00"
     },
@@ -11,7 +11,7 @@
         "issue": "COMMONACT-6",
         "time": "3h",
         "comment": "M\u00e9dico",
-        "dates": "2023.11.30",
+        "dates": "{y}.{m}.{d}",
         "weekend": false,
         "color": "#550000FF"
     },
@@ -19,7 +19,7 @@
         "issue": "COMMONACT-1",
         "time": "1d",
         "comment": "Inmaculada Concepcion de Maria",
-        "dates": "2023.12.08",
+        "dates": "{y}.12.08",
         "weekend": false,
         "color": "#5500FF00"
     }

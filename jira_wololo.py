@@ -210,13 +210,13 @@ def main(page: ft.Page):
 	def dates_validation():
 		dates = txf_dates.value
 
-		try:
-			parse_dates(dates)
-			valid['dates'] = True
-			txf_dates.label = 'Dates'
-		except ValueError:
+		if parse_dates(dates) == None:
 			valid['dates'] = False
 			txf_dates.label = 'Dates - ERROR'
+		else:
+			valid['dates'] = True
+			txf_dates.label = 'Dates'
+			
 		manage_errors()
 
 	##############################

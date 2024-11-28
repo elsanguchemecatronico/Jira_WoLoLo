@@ -63,20 +63,31 @@ Note that the buttons will not enable until you enter all fields CORRECTLY:
 
 To log work on November 1 and 5 you can write: `2023.11.1:2023.11.5,-2023.11.4,-2023.11.2:2023.11.3`.
 
-For now, Saturdays and Sundays are automatically removed.
+The app accepts zero-leading numbers. For example, `2023.11.01:2023.11.02` is the same as `2023.11.1:2023.11.2`.
+
+Saturdays and Sundays are automatically removed.
 
 All logs “creation” time is set to 9 o’clock.
 
 ## Date Placeholders
 
-Date placeholders are special strings that will be replaced with the current date value. There are 3 date placeholders:
+Date placeholders are special strings that will be replaced with the current date value. There are 3 date placeholders (case sensitive):
 
-- `{year}`: the current year.
-- `{month}`: the current month.
-- `{day}`: the current day.
+- `{y}`: the current year.
+- `{m}`: the current month.
+- `{d}`: the current day.
 
 Placeholders can be used in the same way as normal dates and are useful to create recurring work logs that can be saved. Examples:
 
-- Christmas: `{year}.12.25`. Fixed month and day.
-- First day of the month: `{year}.{month}.1`.
-- Today: `{year}.{month}.{day}`.
+- Christmas: `{y}.12.25`. Fixed month and day.
+- First day of the month: `{y}.{m}.1`.
+- Today: `{y}.{m}.{d}`.
+- Yesterday: `{y}.{m}.{d-1}`.
+
+By the way placeholders are implemented, they can be used anywhere as long as they are enclosed in curly braces. This allows to write things like `{y-m+d}.{d}.{m-1}` which may, or may not, be useful. If you find some utility in this "feature", please let me know.
+
+Another consequence of placeholders implementation is that dates can now contain zero or negative values. For example, `{y}.{m}.0` will be replaced with the last day of the previous month (which is equal to `{y}.{m}.{d-1}` used the first day of the month).
+
+# Known Issues
+
+- In Linux you may get `error while loading shared libraries: libmpv.so.1: cannot open shared object file: No such file or directory`. Run`sudo apt install libmpv1` to solve.

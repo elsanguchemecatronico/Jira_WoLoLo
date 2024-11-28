@@ -9,6 +9,7 @@ Modified on 2024-11-23
 from datetime import datetime,timedelta
 from dateutil.relativedelta import relativedelta
 import re
+import logging as log
 
 # FIXME
 # Q: What happens if in an interval, start > end.
@@ -22,6 +23,8 @@ def parse_dates(s):
 		month = datetime.now().month
 		day = datetime.now().day
 
+#		print(match)
+#		print(match.group(0))
 		s = match.group(1)
 #		print('Match: ',s)
 
@@ -30,21 +33,21 @@ def parse_dates(s):
 		s = s.replace('d',str(day))
 
 #		print('substitution: ',s)
-		return s
+		return str(eval(s))
 
 	################################################################
 
 	def parse_placeholders(s):
-		print('Input: ',s)
-		pat = r'\{\s*((?:[ymd]|\d+)(?:\s*[+-]\s*(?:[ymd]|\d+))*)\s*\}'
+#		print('Input: ',s)
+		pat = r'[-]?\{\s*((?:[ymd]|\d+)(?:\s*[+-]\s*(?:[ymd]|\d+))*)\s*\}'
 		s = re.sub(pat,replace_data,s)
 		fields = s.split('.')
-		delta = relativedelta(years = eval(fields[0]) - 1,
-							  months = eval(fields[1]) - 1,
-							  days = eval(fields[2]) - 1)
+		delta = relativedelta(years = int(fields[0]) - 1,
+							  months = int(fields[1]) - 1,
+							  days = int(fields[2]) - 1)
 		s = (datetime(1,1,1) + delta).strftime('%Y.%m.%d')
 
-		print('Output: ',s)
+#		print('Output: ',s)
 		return s
 
 	################################################################
@@ -57,7 +60,7 @@ def parse_dates(s):
 
 			# Process all "positive" dates.
 			for p in parts:
-				print('Processing: ',p)
+#				print('Processing: ',p)
 				if not p.strip().startswith('-'):
 					if ':' in p:
 						interval = p.split(':')
@@ -72,26 +75,32 @@ def parse_dates(s):
 
 						days.extend(x)
 					else:
-						print('Discrete date: ',p)
+#						print('Discrete date: ',p)
 						p = parse_placeholders(p)
-						print(f'Processed: ${p}$')
+#						print(f'Processed: ${p}$')
 						day = datetime.strptime(p,'%Y.%m.%d')
 						days.extend([day])
 
 			# Process all "negative" dates.
 			for p in parts:
-				if '-' in p:
+				p = p.strip()
+				if p.startswith('-'):
 					if ':' in p:
 						interval = p.split(':')
-						start = datetime.strptime(interval[0],'-%Y.%m.%d')
-						end = datetime.strptime(interval[1],'%Y.%m.%d')
+						start = parse_placeholders(interval[0])
+						end = parse_placeholders(interval[1])
+						start = datetime.strptime(start,'%Y.%m.%d')
+						end = datetime.strptime(end,'%Y.%m.%d')
 
 						n = (end - start).days + 1
 
 						x = [start + timedelta(days = i) for i in range(n)]
 						days = [d for d in days if d not in x]
 					else:
-						day = datetime.strptime(p,'-%Y.%m.%d')
+#						print('Discrete date: ',p)
+						p = parse_placeholders(p)
+#						print(f'Processed: ${p}$')
+						day = datetime.strptime(p,'%Y.%m.%d')
 						days = [d for d in days if d != day]
 
 			# Removes Saturdays and Sundays.
@@ -114,11 +123,14 @@ def parse_dates(s):
 
 	try:
 		answer = separate_dates(s)
-	except SyntaxError:
-		print('SyntaxError')
-		answer = None
+#	except SyntaxError:
+#		log.error(f'SyntaxError on date; "{s}"')
+#		answer = None
 	except ValueError:
-		print('ValueError')
+		log.error(f'ValueError on date: "{s}"')
+		answer = None
+	except NameError:
+		log.error(f'NameError on date: "{s}"')
 		answer = None
 
 	return answer
@@ -126,6 +138,7 @@ def parse_dates(s):
 if __name__ == '__main__':
 	benchmark =	[
 		'{y}.{m}.{d}',
+		'{y}.11.08',
 		'{y}.{m}.{d-1}',
 		'{y}.{d-m-1}.1',
 		'{y}.{d-m-}.1',
@@ -135,6 +148,14 @@ if __name__ == '__main__':
 		'  { y }.{ m }.{ d     }   ',
 		'  { y }.{ m }.{ d     + 1  }   ',
 		'{y}.{m}.{d-7}:{y}.{m}.{d}',
+		'-{y}.{m}.{d}',
+		'{y}.{m}.{d-7}:{y}.{m}.{d+1},-{y}.{m}.{d}',
+		'{y}.{m}.{d-7}:{y}.{m}.{d+1},-{y}.{m}.{d-1}:{y}.{m}.{d}',
+		'{year}.{m}.10',
+		'{y}.{m}.{d*2}',
+		'{y}.{m}.{d}-1',
+		'{y}.{m}.0',
+		'{y}.{m}.-10'
 		]
 
 	for s in benchmark:
