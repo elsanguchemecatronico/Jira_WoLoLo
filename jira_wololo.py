@@ -10,7 +10,7 @@ import re
 #import fsm
 from jira_client import jira_client
 from saved import saved_issues
-from dates_parser import parse_dates
+from dates_parser import DateParser
 import calendar
 from datetime import datetime
 import time
@@ -79,7 +79,8 @@ def main(page: ft.Page):
 		issue = ddw_issue.value
 		time = txf_time.value
 		comment = txf_comment.value
-		dates = parse_dates(txf_dates.value)
+		dp = DateParser()
+		dates = dp(txf_dates.value)
 
 		tz = datetime.now(timezone.utc).astimezone().tzinfo
 		# If dates is empty, no work log will be uploaded.
@@ -209,14 +210,15 @@ def main(page: ft.Page):
 
 	def dates_validation():
 		dates = txf_dates.value
+		dp = DateParser()
 
-		if parse_dates(dates) == None:
+		if dp(dates) == None:
 			valid['dates'] = False
 			txf_dates.label = 'Dates - ERROR'
 		else:
 			valid['dates'] = True
 			txf_dates.label = 'Dates'
-			
+
 		manage_errors()
 
 	##############################

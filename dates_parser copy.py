@@ -14,42 +14,45 @@ import logging as log
 # FIXME
 # Q: What happens if in an interval, start > end.
 # A: Nothing, it returns an empty array.
+def parse_dates(s):
 
-################################################################
+	################################################################
 
-class DateParser:
-	def __init__(self):
-		pass
+	def replace_data(match):
+		year = datetime.now().year
+		month = datetime.now().month
+		day = datetime.now().day
 
-	################################
+#		print(match)
+#		print(match.group(0))
+		s = match.group(1)
+#		print('Match: ',s)
 
-	def __call__(self,dates:str):
-		return self.parse(dates)
+		s = s.replace('y',str(year))
+		s = s.replace('m',str(month))
+		s = s.replace('d',str(day))
 
-	################################
+#		print('substitution: ',s)
+		return str(eval(s))
 
-	def parse(self,s):
+	################################################################
 
-		# Accepts dates with '.' or '/' separators.
-		s = s.replace('/','.')
+	def parse_placeholders(s):
+#		print('Input: ',s)
+		pat = r'[-]?\{\s*((?:[ymd]|\d+)(?:\s*[+-]\s*(?:[ymd]|\d+))*)\s*\}'
+		s = re.sub(pat,replace_data,s)
+		fields = s.split('.')
+		delta = relativedelta(years = int(fields[0]) - 1,
+							  months = int(fields[1]) - 1,
+							  days = int(fields[2]) - 1)
+		s = (datetime(1,1,1) + delta).strftime('%Y.%m.%d')
 
-		try:
-			answer = self.separate_dates(s)
-	#	except SyntaxError:
-	#		log.error(f'SyntaxError on date; "{s}"')
-	#		answer = None
-		except ValueError:
-			log.error(f'ValueError on date: "{s}"')
-			answer = None
-		except NameError:
-			log.error(f'NameError on date: "{s}"')
-			answer = None
+#		print('Output: ',s)
+		return s
 
-		return answer
+	################################################################
 
-	################################
-
-	def separate_dates(self,s):
+	def separate_dates(s):
 		days = []
 
 		if s != '':
@@ -57,13 +60,12 @@ class DateParser:
 
 			# Process all "positive" dates.
 			for p in parts:
-				# Removes all whitespaces first.
+#				print('Processing: ',p)
 				if not p.strip().startswith('-'):
-					# If it is an interval.
 					if ':' in p:
 						interval = p.split(':')
-						start = self.parse_placeholders(interval[0])
-						end = self.parse_placeholders(interval[1])
+						start = parse_placeholders(interval[0])
+						end = parse_placeholders(interval[1])
 						start = datetime.strptime(start,'%Y.%m.%d')
 						end = datetime.strptime(end,'%Y.%m.%d')
 
@@ -73,7 +75,9 @@ class DateParser:
 
 						days.extend(x)
 					else:
-						p = self.parse_placeholders(p)
+#						print('Discrete date: ',p)
+						p = parse_placeholders(p)
+#						print(f'Processed: ${p}$')
 						day = datetime.strptime(p,'%Y.%m.%d')
 						days.extend([day])
 
@@ -83,8 +87,8 @@ class DateParser:
 				if p.startswith('-'):
 					if ':' in p:
 						interval = p.split(':')
-						start = self.parse_placeholders(interval[0])
-						end = self.parse_placeholders(interval[1])
+						start = parse_placeholders(interval[0])
+						end = parse_placeholders(interval[1])
 						start = datetime.strptime(start,'%Y.%m.%d')
 						end = datetime.strptime(end,'%Y.%m.%d')
 
@@ -93,53 +97,43 @@ class DateParser:
 						x = [start + timedelta(days = i) for i in range(n)]
 						days = [d for d in days if d not in x]
 					else:
-						p = self.parse_placeholders(p)
+#						print('Discrete date: ',p)
+						p = parse_placeholders(p)
+#						print(f'Processed: ${p}$')
 						day = datetime.strptime(p,'%Y.%m.%d')
 						days = [d for d in days if d != day]
 
 			# Removes Saturdays and Sundays.
 			days = [d for d in days if d.weekday() not in [5,6]]
 
+#		print(days)
+#		print('==============================')
 		return days
 
-	################################
+	################################################################
 
-	def parse_placeholders(self,date:str):
-		#
-		regex = r'[-]?\{\s*((?:[ymd]|\d+)(?:\s*[+-]\s*(?:[ymd]|\d+))*)\s*\}'
-		date = re.sub(regex,self.replace_data,date)
+	s = s.replace('/','.')
 
-		# Separates the date into year, month and day.
-		fields = date.split('.')
-		delta = relativedelta(years = int(fields[0]) - 1,
-							  months = int(fields[1]) - 1,
-							  days = int(fields[2]) - 1)
-		s = (datetime(1,1,1) + delta).strftime('%Y.%m.%d')
+	#p = r'\{.+(?:[+-][a-zA-Z]+)*\}'
+	#p = r'\{(.+(?:[+-].+)(?=[+-].+)*)\}'
+	#p = r'\{(.*?(?:[+,-].+)*)\}'
 
-		return s
+	#p = r'\{((?:[ymd]|\d+)(?:[+-](?:[ymd]|\d+))*)\}'
 
-	################################
 
-	def replace_data(self,match):
-		"""
-		This is the callback function for the re substitution function.
-		"""
+	try:
+		answer = separate_dates(s)
+#	except SyntaxError:
+#		log.error(f'SyntaxError on date; "{s}"')
+#		answer = None
+	except ValueError:
+		log.error(f'ValueError on date: "{s}"')
+		answer = None
+	except NameError:
+		log.error(f'NameError on date: "{s}"')
+		answer = None
 
-		date = datetime.now()
-		year = date.year
-		month = date.month
-		day = date.day
-
-		print(match)
-#		print(match.group(0))
-		s = match.group(1)
-		print('Match: ',s)
-
-		s = s.replace('y',str(year))
-		s = s.replace('m',str(month))
-		s = s.replace('d',str(day))
-
-		return str(eval(s))
+	return answer
 
 ################################################################
 
@@ -163,11 +157,9 @@ if __name__ == '__main__':
 		'{y}.{m}.{d*2}',
 		'{y}.{m}.{d}-1',
 		'{y}.{m}.0',
-		'{y}.{m}.-10',
-		'{y}.{m}.{d-7}:',
+		'{y}.{m}.-10'
 		]
 
-	parser = DateParser()
 	for s in benchmark:
-		print(s.ljust(32),parser(s))
+		print(s.ljust(32),parse_dates(s))
 		print('==============================')
