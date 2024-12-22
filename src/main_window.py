@@ -6,6 +6,9 @@ from PySide6.QtWidgets import (QMainWindow,QWidget,QPushButton,QVBoxLayout,
 from .scrollable_button_list import ScrollableButtonList
 
 class MainWindow(QMainWindow):
+	def resizeEvent(self, event):
+		super(MainWindow, self).resizeEvent(event)
+		print(event)
 	def __init__(self):
 		super(MainWindow, self).__init__()
 		#self.setFixedHeight(0)
@@ -14,7 +17,20 @@ class MainWindow(QMainWindow):
 		#self.setSizePolicy(QSizePolicy.Fixed,QSizePolicy.Minimum)
 		#self.setSizePolicy(Qt.)
 		#self.setWindowFlags(Qt.MSWindowsFixedSizeDialogHint)
-		self.setWindowFlags(self.windowFlags() & ~Qt.WindowMinimizeButtonHint)
+		#self.setWindowFlags(self.windowFlags() & ~Qt.WindowMinimizeButtonHint)
+
+		# This disables the minimize and maximize buttons of the window
+		# but it does not work on Linux (not tested on MacOS).
+		self.setWindowFlag(Qt.WindowFlags.WindowMinimizeButtonHint,False)
+		self.setWindowFlag(Qt.WindowFlags.WindowMaximizeButtonHint,False)
+
+		self.setWindowFlag(Qt.MSWindowsFixedSizeDialogHint)
+
+		h = self.size().height()
+		print(h)
+		#self.setFixedHeight(h)
+		print(self.minimumSize())
+
 
 #		button.clicked.connect(self.button_clicked)
 #		button.pressed.connect(self.button_pressed)
@@ -83,6 +99,7 @@ class MainWindow(QMainWindow):
 		main_widget.setLayout(main_layout)
 
 		statusbar = QStatusBar()
+		statusbar.setSizeGripEnabled(False)
 		self.setStatusBar(statusbar)
 		ready = QLabel("Ready")
 		statusbar.addWidget(ready)
