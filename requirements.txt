@@ -1,5 +1,4 @@
-flet
 jira
 python-dotenv
-datetime
 regex
+pyside6
